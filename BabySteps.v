@@ -1,4 +1,4 @@
-Require Import String EquivDec.
+Require Import String EquivDec Bool.
 Set Implicit Arguments.
 
 Section CoreTheory.
@@ -37,19 +37,6 @@ Section CoreTheory.
       | external => eArg
     end.
 
-  (** If a node is saturated, that means that it has no room for
-  either an internal or an external argument. *)
-
-  Definition is_saturated (fs : features) :=
-    match iArg fs with
-      | None =>
-        match eArg fs with
-          | None => True
-          | _    => False
-        end
-      | _ => False
-    end.
-  
   (** This is where it starts to get interesting. We need a predicate
   that decides whether or not the features [hfs] of the head license
   the features [fs] of a constituent which wishes to be merged to it
@@ -57,28 +44,26 @@ Section CoreTheory.
   saturated, and there is an argument [arg] at [p] in [hfs] whose
   category is equal to the category of [fs]. *)
 
+  Definition saturated_at (fs : features) (p : position) :=
+    match argument_at p fs with
+      | Some _ => false
+      | None   => true
+    end.
+
+  Definition fully_saturated (fs : features) :=
+    (saturated_at fs internal) && (saturated_at fs external).
+
   Definition can_merge_at (hfs : features) (p : position) :=
     match p with
-      | internal => match iArg hfs with
-                     | Some _ => True
-                     | None   => False
-                   end
-      | external => match iArg hfs with
-                   | Some _ => False
-                   | None => match eArg hfs with
-                              | Some _ => True
-                              | None   => False
-                            end
-                 end
+      | internal => negb (saturated_at hfs internal)
+      | external => (saturated_at hfs internal) && (negb (saturated_at hfs external))
     end.
 
   Fixpoint selects (p : position) (hfs : features) (fs : features) :=
     match argument_at p hfs with
       | Some arg =>
         match cat arg == cat fs with
-          | left  _ => match is_saturated fs with
-                        | True => can_merge_at hfs p
-                      end
+          | left  _ => Is_true ((fully_saturated fs) && (can_merge_at hfs p))
           | right _ => False
         end
       | None => False
