@@ -57,7 +57,7 @@ Section CoreTheory.
   saturated, and there is an argument [arg] at [p] in [hfs] whose
   category is equal to the category of [fs]. *)
 
-  Fixpoint can_merge_at (hfs : features) (p : position) :=
+  Definition can_merge_at (hfs : features) (p : position) :=
     match p with
       | internal => match iArg hfs with
                      | Some _ => True
@@ -165,8 +165,6 @@ Section Examples.
   Definition the_dog := the |- dog.
   Definition love_the_dog := love |- the |- dog.
   Definition I_love_the_dog := I -| love |- the |- dog.
-
-  Eval simpl in to_string fuck.
 
   (** The last phrase that we constructed represents the following tree:
            V
