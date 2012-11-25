@@ -83,42 +83,38 @@ Section CoreTheory.
       | None => False
     end.
 
-  (** We now compute the type of a merge at position [p]. We require a
-  proof that the head selects for the new node. The resulting node
-  inherits the category of the head, and has its [iArg] saturated; if
-  [p] is external, that means that the [eArg] has also been
-  saturated. *)
-
-  Definition gen_merge (N : features -> Set) (p : position) :=
-    forall (hfs : _) (fs : _)
-      (h : N hfs) (n : N fs)
-      (sel : selects p hfs fs),
-      N {| cat := cat hfs ;
-           iArg := None ;
-           eArg := match p with
-                    | internal => eArg hfs
-                    | external => None
-                  end
-        |}.
-
   (** Finally, we are ready to model nodes. A node is indexed by its
   features, and may be either a head (minimal projection), or the
-  result of a [cmerge] (merging of a complement into internal argument
-  position), or the result of an [smerge] (merginf of a specifier into
-  external argument position). The types of the latter two
-  constructors are computed using [gen_merge] above. *)
+  result of a [merge] (merging of a complement into internal argument
+  position, or merging of a specifier into external argument position)
+  The type of the [merge] constructor is computed at position [p] as
+  follows:
+
+  We require a proof that the head selects for the new node. The
+  resulting node inherits the category of the head, and has its [iArg]
+  saturated; if [p] is external, that means that the [eArg] has also
+  been saturated. *)
 
   Inductive node : features -> Set :=
   | head : forall (s : string), forall (fs : features), node fs
-  | cmerge : gen_merge node internal
-  | smerge : gen_merge node external.
+  | merge : forall (p : position) (hfs : _) (fs : _)
+              (h : node hfs) (n : node fs),
+              selects p hfs fs ->
+              node {| cat := cat hfs ;
+                      iArg := None ;
+                      eArg := match p with
+                               | internal => eArg hfs
+                               | external => None
+                             end
+                   |}.
+
 
   (** As a bonus, we provide a function to fold a node into a string. *)
   Fixpoint to_string {fs : _} (n : node fs) : string :=
     match n with
       | head s _ => s
-      | cmerge _ _ h c _ => append (to_string h) (append " " (to_string c))
-      | smerge _ _ h s _ => append (to_string s) (append " " (to_string h))
+      | merge internal _ _ h c _ => append (to_string h) (append " " (to_string c))
+      | merge external _ _ h s _ => append (to_string s) (append " " (to_string h))
     end.
 
 End CoreTheory.
@@ -129,9 +125,9 @@ Section Examples.
   the single constructor for the type [True], and serves as the
   proof-witness that the head selects the merged node. *)
 
-  Notation " head |- comp " := (cmerge head comp I)
+  Notation " head |- comp " := (merge internal head comp I)
                                (right associativity, at level 100).
-  Notation " spec -| head " := (smerge head spec I)
+  Notation " spec -| head " := (merge external head spec I)
                                (left associativity, at level 101).
   
   (** Let's build up a lexicon. *)
@@ -183,4 +179,5 @@ Section Examples.
   
   (** Evaluating our phrase as a string yields ["I love the dog"]. *)
   Eval simpl in to_string I_love_the_dog.
+
 End Examples.
