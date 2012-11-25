@@ -57,11 +57,28 @@ Section CoreTheory.
   saturated, and there is an argument [arg] at [p] in [hfs] whose
   category is equal to the category of [fs]. *)
 
+  Fixpoint can_merge_at (hfs : features) (p : position) :=
+    match p with
+      | internal => match iArg hfs with
+                     | Some _ => True
+                     | None   => False
+                   end
+      | external => match iArg hfs with
+                   | Some _ => False
+                   | None => match eArg hfs with
+                              | Some _ => True
+                              | None   => False
+                            end
+                 end
+    end.
+
   Fixpoint selects (p : position) (hfs : features) (fs : features) :=
     match argument_at p hfs with
       | Some arg =>
         match cat arg == cat fs with
-          | left  _ => is_saturated fs
+          | left  _ => match is_saturated fs with
+                        | True => can_merge_at hfs p
+                      end
           | right _ => False
         end
       | None => False
@@ -148,6 +165,8 @@ Section Examples.
   Definition the_dog := the |- dog.
   Definition love_the_dog := love |- the |- dog.
   Definition I_love_the_dog := I -| love |- the |- dog.
+
+  Eval simpl in to_string fuck.
 
   (** The last phrase that we constructed represents the following tree:
            V
