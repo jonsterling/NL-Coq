@@ -18,7 +18,9 @@ Section CoreTheory.
       }.
 
 
-  (** Coq allows us to derive decidable equality for categories. This will prove useful below. *)
+  (** Coq allows us to derive decidable equality for categories. This
+  will prove useful below. *)
+
   Theorem eq_cat_dec (a : category) (b : category) : {a = b} + {a <> b}.
   Proof.
     decide equality.
