@@ -103,12 +103,11 @@ Module CoreTheory.
     end.
 
   Inductive node : features -> Set :=
-  | head : forall (s : string), forall (fs : features), node fs
-  | merge : forall (p : position) {hfs : _} {fs : _} (h : node hfs) (n : node fs),
-              Is_true (selects p hfs fs && can_merge_at p hfs) ->
-              node {| cat := cat hfs ;
-                      args := saturate_at p hfs
-                   |}.
+  | head : forall (_ : string) (fs : features), node fs
+  | merge : forall (p : position) {hfs : _} {fs : _},
+              node hfs -> node fs
+              -> Is_true (selects p hfs fs && can_merge_at p hfs)
+              -> node {| cat := cat hfs ; args := saturate_at p hfs |}.
 
 
   (** As a bonus, we provide a function to fold a node into a string. *)
