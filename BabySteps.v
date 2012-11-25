@@ -1,17 +1,29 @@
 Require Import String EquivDec Bool Datatypes.
 Set Implicit Arguments.
 
-Module Utilities.
+Module Classes.
+  Class Functor f := { map : forall {a b}, (a -> b) -> f a -> f b }.
+  Class Pointed f := { point : forall {a}, a -> f a }.
+  Class Monad m `(Functor m) `(Pointed m) := { join : forall {a}, m (m a) -> m a }.
+
+  Definition flatMap {a b : _} {m : _} `{Monad m} (f : a -> m b) (x : m a) : m b :=
+    join (map f x).
+
+  Instance optionFunctor : Functor _ := { map := option_map }.
+  Instance optionPointed : Pointed _ := { point := fun _ x => Some x}.
+  Instance optionMonad : Monad _ _ :=
+    { join := fun _ x => match x with Some y => y | None => None end }.
+
+  Notation " f <$> x " := (map f x) (at level 100).
+  Notation " f =<< x " := (flatMap f x) (at level 100).
+End Classes.
+
+Module Tactics.
   Ltac derive_eq := intros x y; change ({x = y} + {x <> y}); decide equality.
-  Definition option_flatMap {a b : _} (f : a -> option b) (x : option a) :=
-    match x with
-      | Some x => f x
-      | None   => None
-    end.
-End Utilities.
+End Tactics.
 
 Module CoreTheory.
-  Import Utilities.
+  Import Tactics Classes.
 
   (** We'll start with a few syntactic categories. This is of course
   not sufficient to do real syntax, but it will do for now. *)
@@ -22,7 +34,7 @@ Module CoreTheory.
   theory, features are just a syntactic category, and specifications
   for internal and external arguments. *)
 
-  Inductive arg (rep : Set) :=
+  Inductive arg (rep : Type) :=
     | sat   : arg rep
     | unsat : rep -> arg rep.
   Arguments sat [rep].
@@ -40,8 +52,8 @@ Module CoreTheory.
 
   Definition argument_at (p : position) (fs : features) :=
     match p with
-      | internal => option_map fst (args fs)
-      | external => option_flatMap snd (args fs)
+      | internal => fst <$> args fs
+      | external => snd =<< args fs
     end.
 
   (** This is where it starts to get interesting. We need a predicate
