@@ -3,10 +3,14 @@ Set Implicit Arguments.
 
 Section CoreTheory.
 
-  (** We'll start with a few syntactic categories. This is of course not sufficient to do real syntax, but it will do for now. *)
+  (** We'll start with a few syntactic categories. This is of course
+  not sufficient to do real syntax, but it will do for now. *)
   Inductive category := D | N | V.
 
-  (** Each constituent is marked by a set of features; in our current theory, features are just a syntactic category, and specifications for internal and external arguments. *)
+  (** Each constituent is marked by a set of features; in our current
+  theory, features are just a syntactic category, and specifications
+  for internal and external arguments. *)
+
   Inductive features : Set :=
       { cat : category ;
         iArg : option features ;
@@ -21,7 +25,11 @@ Section CoreTheory.
   Defined.
   Program Instance cat_eq_eqdec : EqDec category eq := eq_cat_dec.
 
-  (** In our current theory, there are two kinds of arguments: internal and external; an internal argument is lower in the tree than the head, whereas an external argument is higher. We provide selectors for arguments. *)
+  (** In our current theory, there are two kinds of arguments:
+  internal and external; an internal argument is lower in the tree
+  than the head, whereas an external argument is higher. We provide
+  selectors for arguments. *)
+
   Inductive position := internal | external.
   Definition argument_at (p : position) :=
     match p with
@@ -29,7 +37,9 @@ Section CoreTheory.
       | external => eArg
     end.
 
-  (** If a node is saturated, that means that it has no room for either an internal or an external argument. *)
+  (** If a node is saturated, that means that it has no room for
+  either an internal or an external argument. *)
+
   Definition is_saturated (fs : features) :=
     match iArg fs with
       | None =>
@@ -40,7 +50,13 @@ Section CoreTheory.
       | _ => False
     end.
   
-  (** This is where it starts to get interesting. We need a predicate that decides whether or not the features [hfs] of the head license the features [fs] of a constituent which wishes to be merged to it at some position [p]. The predicate is satisfied if [fs] is saturated, and there is an argument [arg] at [p] in [hfs] whose category is equal to the category of [fs]. *)
+  (** This is where it starts to get interesting. We need a predicate
+  that decides whether or not the features [hfs] of the head license
+  the features [fs] of a constituent which wishes to be merged to it
+  at some position [p]. The predicate is satisfied if [fs] is
+  saturated, and there is an argument [arg] at [p] in [hfs] whose
+  category is equal to the category of [fs]. *)
+
   Fixpoint selects (p : position) (hfs : features) (fs : features) :=
     match argument_at p hfs with
       | Some arg =>
@@ -51,7 +67,12 @@ Section CoreTheory.
       | None => False
     end.
 
-  (** We now compute the type of a merge at position [p]. We require a proof that the head selects for the new node. The resulting node inherits the category of the head, and has its [iArg] saturated; if [p] is external, that means that the [eArg] has also been saturated. *)
+  (** We now compute the type of a merge at position [p]. We require a
+  proof that the head selects for the new node. The resulting node
+  inherits the category of the head, and has its [iArg] saturated; if
+  [p] is external, that means that the [eArg] has also been
+  saturated. *)
+
   Definition gen_merge (N : features -> Set) (p : position) :=
     forall (hfs : _) (fs : _)
       (h : N hfs) (n : N fs)
@@ -64,7 +85,13 @@ Section CoreTheory.
                   end
         |}.
 
-  (** Finally, we are ready to model nodes. A node is indexed by its features, and may be either a head (minimal projection), or the result of a [cmerge] (merging of a complement into internal argument position), or the result of an [smerge] (merginf of a specifier into external argument position). The types of the latter two constructors are computed using [gen_merge] above. *)
+  (** Finally, we are ready to model nodes. A node is indexed by its
+  features, and may be either a head (minimal projection), or the
+  result of a [cmerge] (merging of a complement into internal argument
+  position), or the result of an [smerge] (merginf of a specifier into
+  external argument position). The types of the latter two
+  constructors are computed using [gen_merge] above. *)
+
   Inductive node : features -> Set :=
   | head : forall (s : string), forall (fs : features), node fs
   | cmerge : gen_merge node internal
@@ -81,7 +108,11 @@ Section CoreTheory.
 End CoreTheory.
 
 Section Examples.
-  (** Let's make some convenient notation for merges. Note that [I] is the single constructor for the type [True], and serves as the proof-witness that the head selects the merged node. *)
+
+  (** Let's make some convenient notation for merges. Note that [I] is
+  the single constructor for the type [True], and serves as the
+  proof-witness that the head selects the merged node. *)
+
   Notation " head |- comp " := (cmerge head comp I)
                                (right associativity, at level 100).
   Notation " spec -| head " := (smerge head spec I)
@@ -111,7 +142,9 @@ Section Examples.
     head "I"
          {| cat := D ; iArg := None ; eArg := None |}.
 
-  (** We can now build up some phrases. If they type check, then they are grammatical within our theory. *)
+  (** We can now build up some phrases. If they type check, then they
+  are grammatical within our theory. *)
+
   Definition the_dog := the |- dog.
   Definition love_the_dog := love |- the |- dog.
   Definition I_love_the_dog := I -| love |- the |- dog.
