@@ -71,7 +71,7 @@ Section CoreTheory.
   (** Now, we can check if the merge will be successful, given the
   syntactic category of each of the participants. *)
 
-  Fixpoint selects (p : position) (hfs : features) (fs : features) :=
+  Definition selects (p : position) (hfs : features) (fs : features) :=
     match argument_at p hfs with
       | Some arg =>
         match cat arg == cat fs with
