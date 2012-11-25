@@ -44,6 +44,10 @@ Section CoreTheory.
   saturated, and there is an argument [arg] at [p] in [hfs] whose
   category is equal to the category of [fs]. *)
 
+  (** We can say that a node is saturated at a position if there is no
+  specification for an argument present. This is because these
+  specifications are erased after each merge. *)
+
   Definition saturated_at (fs : features) (p : position) :=
     match argument_at p fs with
       | Some _ => false
@@ -53,11 +57,19 @@ Section CoreTheory.
   Definition fully_saturated (fs : features) :=
     (saturated_at fs internal) && (saturated_at fs external).
 
+  (** First, we determine if a merge is even plausible: for C-merge,
+  the internal argument must not already be saturated; for S-merge,
+  the internal argument must be saturated, and the external argument
+  must not be. *)
+
   Definition can_merge_at (hfs : features) (p : position) :=
     match p with
       | internal => negb (saturated_at hfs internal)
       | external => (saturated_at hfs internal) && (negb (saturated_at hfs external))
     end.
+
+  (** Now, we can check if the merge will be successful, given the
+  syntactic category of each of the participants. *)
 
   Fixpoint selects (p : position) (hfs : features) (fs : features) :=
     match argument_at p hfs with
