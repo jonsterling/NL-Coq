@@ -22,8 +22,8 @@ Module CoreTheory.
   theory, features are just a syntactic category, and specifications
   for internal and external arguments. *)
 
-  Inductive arg (rep : Set) : Set :=
-    | sat : arg rep
+  Inductive arg (rep : Set) :=
+    | sat   : arg rep
     | unsat : rep -> arg rep.
   Arguments sat [rep].
 
@@ -104,8 +104,7 @@ Module CoreTheory.
 
   Inductive node : features -> Set :=
   | head : forall (s : string), forall (fs : features), node fs
-  | merge : forall (p : position) (hfs : _) (fs : _)
-              (h : node hfs) (n : node fs),
+  | merge : forall (p : position) {hfs : _} {fs : _} (h : node hfs) (n : node fs),
               Is_true (selects p hfs fs && can_merge_at p hfs) ->
               node {| cat := cat hfs ;
                       args := saturate_at p hfs
@@ -113,7 +112,7 @@ Module CoreTheory.
 
 
   (** As a bonus, we provide a function to fold a node into a string. *)
-  Fixpoint to_string {fs : _} (n : node fs) : string :=
+  Fixpoint to_string {fs : _} (n : node fs) :=
     match n with
       | head s _ => s
       | merge internal _ _ h c _ => append (to_string h) (append " " (to_string c))
@@ -134,9 +133,10 @@ Module Notations.
   Notation " spec -| head " := (merge external head spec I)
                                (left associativity, at level 101).
 
-  Definition mkArg (c : category) : arg features := unsat (Build_features c None).
-  Notation " <| i |> " := (Some (mkArg i, None)).
+  Definition mkArg (c : category) := unsat (Build_features c None).
+  Notation " <| i |> "     := (Some (mkArg i, None)).
   Notation " <| i , e |> " := (Some (mkArg i, Some (mkArg e))).
+
 End Notations.
   
 Module Examples.
@@ -144,16 +144,16 @@ Module Examples.
   Import Notations.
 
   (** Let's build up a lexicon. *)
-  Definition dog := head "dog" {| cat := N ; args := None |}.
-  Definition love := head "love" {| cat  := V ; args := <| D , D |> |}.
-  Definition the := head "the" {| cat  := D ; args := <| N |> |}.
-  Definition fst_prn := head "I" {| cat := D ; args := None |}.
+  Definition dog     := head "dog"  {| cat := N ; args := None |}.
+  Definition love    := head "love" {| cat := V ; args := <| D , D |> |}.
+  Definition the     := head "the"  {| cat := D ; args := <| N |> |}.
+  Definition fst_prn := head "I"    {| cat := D ; args := None |}.
 
   (** We can now build up some phrases. If they type check, then they
   are grammatical within our theory. *)
 
-  Definition the_dog := the |- dog.
-  Definition love_the_dog := love |- the |- dog.
+  Definition the_dog        := the |- dog.
+  Definition love_the_dog   := love |- the |- dog.
   Definition I_love_the_dog := fst_prn -| love |- the |- dog.
 
   (** The last phrase that we constructed represents the following tree:
